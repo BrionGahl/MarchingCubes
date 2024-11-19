@@ -10,8 +10,14 @@ namespace MarchingCubes;
 public partial class MarchingCubes : Node
 {
 
+	[Export] 
+	private NoiseTexture3D _noise3d;
+
 	[Export]
-	private NoiseTexture3D _noiseTexture;
+	private NoiseTexture2D _noise2d;
+
+	[Export]
+	private float _isoLevel;
 
 	private MeshInstance3D _meshInstance;
 	private ArrayMesh _am;
@@ -21,27 +27,29 @@ public partial class MarchingCubes : Node
 	private List<Vector2> _uvs;
 	private List<Vector3> _normals;
 	private List<int> _indices;
-
-	private int _cellSize;
+	
+	private List<float> _debugNoise;
 	
 	public override void _Ready()
 	{
 		_meshInstance = GetNode<MeshInstance3D>("MeshInstance3D");
 		_am = new ArrayMesh();
 
-		_cellSize = 1;
+		_debugNoise = new List<float>();
 		
 		_array = new Array();
+		
 		_vertices = new List<Vector3>();
 		_uvs = new List<Vector2>();
 		_normals = new List<Vector3>();
 		_indices = new List<int>();
 		
 		_array.Resize((int)Mesh.ArrayType.Max);
-		for (int x = 0; x < 32; x++)
-		for (int y = 0; y < 32; y++)
-		for (int z = 0; z < 32; z++)
-			HandleCell(new Vector3(x, y, z), -0.6f);
+		
+		for (int x = -64; x < 64; x++)
+		for (int y = 0; y < 64; y++)
+		for (int z = -64; z < 64; z++)
+			HandleCell(new Vector3(x, y, z), _isoLevel);
 
 		CalculateNormals();
 		
@@ -52,6 +60,10 @@ public partial class MarchingCubes : Node
 		
 		_am.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, _array);
 		_meshInstance.Mesh = _am;
+		
+		GD.Print("MAX: " + _debugNoise.Max());
+		GD.Print("AVG: " + _debugNoise.Average());
+		GD.Print("MIN: " + _debugNoise.Min());
 	}
 
 	// Take a 8 points of a given cube and a threshold, then perform algo on it.
@@ -133,7 +145,26 @@ public partial class MarchingCubes : Node
 	 */
 	private CubeCorner Evaluate(Vector3 pos)
 	{
-		return new CubeCorner(pos, _noiseTexture.Noise.GetNoise3Dv(pos) * 2 - 1);
+		float hardFloor = 3;
+		
+		float density = -pos.Y;
+		_debugNoise.Add(_noise3d.Noise.GetNoise3Dv(pos));
+		
+		
+		density += _noise3d.Noise.GetNoise3Dv(pos * 4.09f) * 0.25f;
+		density += _noise3d.Noise.GetNoise3Dv(pos * 1.96f) * 0.5f;
+		density += _noise3d.Noise.GetNoise3Dv(pos * 1.01f) * 1.0f;
+		density += _noise3d.Noise.GetNoise3Dv(pos * 0.51f) * 2.0f;
+		density += _noise3d.Noise.GetNoise3Dv(pos * 0.26f) * 4.0f;
+		density += _noise3d.Noise.GetNoise3Dv(pos * 0.123f) * 8.0f;
+		density += _noise3d.Noise.GetNoise3Dv(pos * 0.057f) * 16.0f;
+		density += _noise3d.Noise.GetNoise3Dv(pos * 0.031f) * 32.0f;
+		density += _noise3d.Noise.GetNoise3Dv(pos * 0.015f) * 64.0f;
+
+		
+		density += -pos.Y + pos.Y % 5;
+		density += Mathf.Clamp((hardFloor - pos.Y) * 3, 0.0f, 1.0f) * 40;
+		return new CubeCorner(pos, density);
 	}
 
 	private Vector3 VertexInterpolate(float isoLevel, Vector3 pos1, Vector3 pos2, float noise1, float noise2)

@@ -3,11 +3,19 @@
 [ext_resource type="Script" path="res://src/MarchingCubes.cs" id="1_m463u"]
 [ext_resource type="Script" path="res://src/debug/DebugCamera.gd" id="2_liqo2"]
 
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_12j4g"]
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_jxj41"]
+noise_type = 0
+seed = 1
+frequency = 0.12
+offset = Vector3(0, 0, 64)
+fractal_type = 0
 fractal_octaves = 9
 
-[sub_resource type="NoiseTexture3D" id="NoiseTexture3D_x2s0l"]
-noise = SubResource("FastNoiseLite_12j4g")
+[sub_resource type="NoiseTexture3D" id="NoiseTexture3D_q5dgi"]
+width = 16
+height = 16
+depth = 16
+noise = SubResource("FastNoiseLite_jxj41")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vydq1"]
 albedo_color = Color(1, 0.454902, 1, 1)
@@ -16,7 +24,7 @@ albedo_color = Color(1, 0.454902, 1, 1)
 
 [node name="MarchingCubes" type="Node3D"]
 script = ExtResource("1_m463u")
-_noiseTexture = SubResource("NoiseTexture3D_x2s0l")
+_noise3d = SubResource("NoiseTexture3D_q5dgi")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 material_override = SubResource("StandardMaterial3D_vydq1")
@@ -25,6 +33,7 @@ material_override = SubResource("StandardMaterial3D_vydq1")
 script = ExtResource("2_liqo2")
 
 [node name="DebugMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -1)
 mesh = SubResource("SphereMesh_kr638")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
